@@ -11,12 +11,12 @@ func GetGRM() *GRM {
 }
 
 func InitDefaultGRM() error {
-	_defaultGRM, err := NewGRM()
+	var err error
+	defaultGRM, err = NewGRM()
 	if err != nil {
 		logger.Error("init default GRM err:  %v", err)
 		return err
 	}
-	defaultGRM = _defaultGRM
 	return nil
 }
 
