@@ -80,7 +80,7 @@ func UpsertUpstreamFunc(existing, desired *v1.Upstream) error {
 func (u *UpstreamManager) Update(ctx context.Context, obj *v1.Upstream) error {
 	err := u.UpstreamClient.UpsertUpstream(ctx, obj, UpsertUpstreamFunc)
 	if err != nil {
-		logger.Error("ca update err:  %v", err)
+		logger.Error("upstream update err:  %v", err)
 	}
 	return err
 }

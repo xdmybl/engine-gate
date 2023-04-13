@@ -13,11 +13,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type GatewayManager struct {
-	GatewayClient v1.GatewayClient
+type FilterManager struct {
+	FilterClient v1.FilterClient
 }
 
-func (c *GatewayManager) Init() error {
+func (f *FilterManager) Init() error {
 	cfg := config.GetConfig()
 	// TODO 加载 kubeconfig 或 静态 token, master url, 等配置
 	// 优先加载 kubeconfig
@@ -35,51 +35,51 @@ func (c *GatewayManager) Init() error {
 		logger.Error("kube config err:  %v", err)
 		os.Exit(constant.KubernetesConnectError)
 	}
-	factory := v12.GatewayClientFromConfigFactoryProvider()
+	factory := v12.FilterClientFromConfigFactoryProvider()
 	caClient, err := factory(kubeConnectConfig)
-	c.GatewayClient = caClient
+	f.FilterClient = caClient
 	return err
 }
 
-func (c *GatewayManager) Create(ctx context.Context, obj *v1.Gateway) error {
-	err := c.GatewayClient.CreateGateway(ctx, obj)
+func (f *FilterManager) Create(ctx context.Context, obj *v1.Filter) error {
+	err := f.FilterClient.CreateFilter(ctx, obj)
 	return err
 }
 
-func (c *GatewayManager) Get(ctx context.Context, name string) (*v1.Gateway, error) {
+func (f *FilterManager) Get(ctx context.Context, name string) (*v1.Filter, error) {
 	cfg := config.GetConfig()
 
 	o := client.ObjectKey{
 		Namespace: cfg.Namespace,
 		Name:      name,
 	}
-	return c.GatewayClient.GetGateway(ctx, o)
+	return f.FilterClient.GetFilter(ctx, o)
 }
 
 // Filter todo
-func (c *GatewayManager) Filter() []*v1.CaCertificate {
+func (f *FilterManager) Filter() []*v1.Filter {
 
-	return []*v1.CaCertificate{}
+	return []*v1.Filter{}
 }
 
-func (c *GatewayManager) Delete(ctx context.Context, name string) error {
+func (f *FilterManager) Delete(ctx context.Context, name string) error {
 	cfg := config.GetConfig()
 	o := client.ObjectKey{
 		Namespace: cfg.Namespace,
 		Name:      name,
 	}
-	return c.GatewayClient.DeleteGateway(ctx, o)
+	return f.FilterClient.DeleteFilter(ctx, o)
 }
 
-func UpsertGatewayFunc(existing, desired *v1.Gateway) error {
+func UpsertFilterFunc(existing, desired *v1.Filter) error {
 	return nil
 }
 
 // Update obj 表示更新后的对象, 之前的对象可以通过 key 自己找出来的
-func (c *GatewayManager) Update(ctx context.Context, obj *v1.Gateway) error {
-	err := c.GatewayClient.UpsertGateway(ctx, obj, UpsertGatewayFunc)
+func (f *FilterManager) Update(ctx context.Context, obj *v1.Filter) error {
+	err := f.FilterClient.UpsertFilter(ctx, obj, UpsertFilterFunc)
 	if err != nil {
-		logger.Error("gateway update err:  %v", err)
+		logger.Error("filter update err:  %v", err)
 	}
 	return err
 }
