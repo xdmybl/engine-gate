@@ -6,6 +6,7 @@ import (
 
 var defaultGRM *GRM
 
+// GetGRM 这个方法获取 grm 对象
 func GetGRM() *GRM {
 	return defaultGRM
 }
