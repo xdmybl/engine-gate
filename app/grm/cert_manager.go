@@ -4,12 +4,10 @@ import (
 	"context"
 	"github.com/wonderivan/logger"
 	"github.com/xdmybl/engine-gate/util/config"
-	"github.com/xdmybl/engine-gate/util/constant"
 	"github.com/xdmybl/gate-type/pkg/api/gate.xdmybl.io/v1"
 	v12 "github.com/xdmybl/gate-type/pkg/api/gate.xdmybl.io/v1/providers"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	"os"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -19,10 +17,8 @@ type CertManager struct {
 
 func (c *CertManager) Init() error {
 	cfg := config.GetConfig()
-	kubeConnectConfig, err := rest.InClusterConfig()
-	if err != nil {
-		logger.Error("kube connect init err:  %v", err)
-	}
+	kubeConnectConfig := &rest.Config{}
+	var err error
 	if cfg.KubeConfig != "" {
 		kubeConnectConfig, err = clientcmd.BuildConfigFromFlags("", cfg.KubeConfig)
 	} else if cfg.Token != "" && cfg.MasterUrl != "" {
@@ -31,7 +27,7 @@ func (c *CertManager) Init() error {
 	}
 	if err != nil {
 		logger.Error("kube config err:  %v", err)
-		os.Exit(constant.KubernetesConnectError)
+		return err
 	}
 	factory := v12.CertificateClientFromConfigFactoryProvider()
 	certClient, err := factory(kubeConnectConfig)

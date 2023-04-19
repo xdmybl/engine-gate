@@ -4,12 +4,10 @@ import (
 	"context"
 	"github.com/wonderivan/logger"
 	"github.com/xdmybl/engine-gate/util/config"
-	"github.com/xdmybl/engine-gate/util/constant"
 	v1 "github.com/xdmybl/gate-type/pkg/api/gate.xdmybl.io/v1"
 	v12 "github.com/xdmybl/gate-type/pkg/api/gate.xdmybl.io/v1/providers"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	"os"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -19,12 +17,8 @@ type UpstreamManager struct {
 
 func (u *UpstreamManager) Init() error {
 	cfg := config.GetConfig()
-	// TODO 加载 kubeconfig 或 静态 token, master url, 等配置
-	// 优先加载 kubeconfig
-	kubeConnectConfig, err := rest.InClusterConfig()
-	if err != nil {
-		logger.Error("kube connect init err:  %v", err)
-	}
+	kubeConnectConfig := &rest.Config{}
+	var err error
 	if cfg.KubeConfig != "" {
 		kubeConnectConfig, err = clientcmd.BuildConfigFromFlags("", cfg.KubeConfig)
 	} else if cfg.Token != "" && cfg.MasterUrl != "" {
@@ -33,7 +27,7 @@ func (u *UpstreamManager) Init() error {
 	}
 	if err != nil {
 		logger.Error("kube config err:  %v", err)
-		os.Exit(constant.KubernetesConnectError)
+		return err
 	}
 	factory := v12.UpstreamClientFromConfigFactoryProvider()
 	caClient, err := factory(kubeConnectConfig)

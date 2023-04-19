@@ -1,0 +1,13 @@
+[kubernetes]
+namespace=engine-gate-system
+kube_config=./config
+token=
+master_url=
+
+
+[xds]
+address=0.0.0.0
+port=7000
+
+[envoy]
+node_id=gate-proxy

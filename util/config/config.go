@@ -7,6 +7,8 @@ import (
 var DefaultCfg = &Config{}
 var defaultConfigPath = "./config.ini"
 
+// TODO 设置各种选项默认值
+
 func LoadDefaultConfig(path string) error {
 	var (
 		pf  *ini.File
@@ -26,17 +28,27 @@ func LoadDefaultConfig(path string) error {
 // Kubernetes 与 kubernetes 相关的配置, 如果写了 KubeConfig 就不用再填其它的了
 type Kubernetes struct {
 	Namespace  string `ini:"namespace"`
-	KubeConfig string `ini:"kubeConfig"`
+	KubeConfig string `ini:"kube_config"`
 	Token      string `ini:"token"`
-	MasterUrl  string `ini:"masterUrl"`
+	MasterUrl  string `ini:"master_url"`
 }
 
-// Envoy 与 envoy 相关配置, 添加一些默认选项
+type XDSOption struct {
+}
+
 type Envoy struct {
+	NodeId string `ini:"node_id"`
+}
+
+// XDS 与 envoy 相关配置, 添加一些默认选项
+type XDS struct {
+	Address string `ini:"address"`
+	Port    string `ini:"port"`
 }
 
 type Config struct {
 	Kubernetes `ini:"kubernetes"`
+	XDS        `ini:"xds"`
 	Envoy      `ini:"envoy"`
 }
 
