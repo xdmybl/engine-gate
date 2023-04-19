@@ -42,8 +42,8 @@ type Envoy struct {
 
 // XDS 与 envoy 相关配置, 添加一些默认选项
 type XDS struct {
-	Address string `ini:"address"`
-	Port    string `ini:"port"`
+	ListenIp string `ini:"listen_ip"`
+	Port     string `ini:"port"`
 }
 
 type Config struct {

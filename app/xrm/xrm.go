@@ -172,6 +172,6 @@ func Init() error {
 	// callbacks 是提供用户自定义的回调功能的接口, test.Callbacks 实现了
 	cb := &test.Callbacks{Debug: true}
 	srv := server.NewServer(ctx, cache, cb)
-	RunServer(srv, fmt.Sprintf("%s:%s", cfg.XDS.Address, cfg.XDS.Port))
+	RunServer(srv, fmt.Sprintf("%s:%s", cfg.XDS.ListenIp, cfg.XDS.Port))
 	return nil
 }
