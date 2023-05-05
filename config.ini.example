@@ -10,9 +10,9 @@ master_url=
 
 
 [xds]
-;; xDS Server 的监听地址
+;; xDS Server 的监听地址, 建议为 20520 端口
 listen_ip=0.0.0.0
-port=7000
+port=20520
 
 [envoy]
 ;; 为哪个 envoy 节点提供配置 (通过 node_id 标识 envoy)
