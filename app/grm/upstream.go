@@ -51,7 +51,7 @@ func (u *UpstreamManager) Get(ctx context.Context, name string) (*v1.Upstream, e
 }
 
 // Filter todo
-func (u *UpstreamManager) Filter() []*v1.Upstream {
+func (u *UpstreamManager) Filter() v1.UpstreamSlice {
 
 	return []*v1.Upstream{}
 }

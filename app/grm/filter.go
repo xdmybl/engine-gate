@@ -51,7 +51,7 @@ func (f *FilterManager) Get(ctx context.Context, name string) (*v1.Filter, error
 }
 
 // Filter todo
-func (f *FilterManager) Filter() []*v1.Filter {
+func (f *FilterManager) Filter() v1.FilterSlice {
 
 	return []*v1.Filter{}
 }

@@ -51,7 +51,7 @@ func (c *CertManager) Get(ctx context.Context, name string) (*v1.Certificate, er
 }
 
 // Filter todo
-func (c *CertManager) Filter() []*v1.Certificate {
+func (c *CertManager) Filter() v1.CertificateSlice {
 
 	return []*v1.Certificate{}
 }

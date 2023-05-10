@@ -52,7 +52,7 @@ func (c *CaManager) Get(ctx context.Context, name string) (*v1.CaCertificate, er
 }
 
 // Filter todo
-func (c *CaManager) Filter() []*v1.CaCertificate {
+func (c *CaManager) Filter() v1.CaCertificateSlice {
 
 	return []*v1.CaCertificate{}
 }

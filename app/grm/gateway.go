@@ -51,7 +51,7 @@ func (c *GatewayManager) Get(ctx context.Context, name string) (*v1.Gateway, err
 }
 
 // Filter todo
-func (c *GatewayManager) Filter() []*v1.CaCertificate {
+func (c *GatewayManager) Filter() v1.CaCertificateSlice {
 
 	return []*v1.CaCertificate{}
 }
