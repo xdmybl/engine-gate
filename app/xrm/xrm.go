@@ -7,7 +7,6 @@ import (
 	"github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	"github.com/wonderivan/logger"
 	"github.com/xdmybl/engine-gate/util/config"
-	"log"
 	"net"
 	"time"
 
@@ -82,8 +81,6 @@ func (s *Server) Run(port uint) {
 
 	s.registerServer(grpcServer)
 
-	log.Printf("management server listening on %d\n", port)
-	logger.Info("")
 	if err = grpcServer.Serve(lis); err != nil {
 		logger.Error(err)
 	}
