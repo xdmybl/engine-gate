@@ -50,10 +50,15 @@ func (f *FilterManager) Get(ctx context.Context, name string) (*v1.Filter, error
 	return f.FilterClient.GetFilter(ctx, o)
 }
 
-// Filter todo
-func (f *FilterManager) Filter() v1.FilterSlice {
+func (f *FilterManager) Filter(ctx context.Context, fo FilterOptions) ([]v1.Filter, error) {
+	_ = fo
+	filterList, err := f.FilterClient.ListFilter(ctx)
+	if err != nil {
+		logger.Error(err)
+		return nil, err
+	}
+	return filterList.Items, nil
 
-	return []*v1.Filter{}
 }
 
 func (f *FilterManager) Delete(ctx context.Context, name string) error {

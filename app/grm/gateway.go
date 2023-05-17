@@ -50,10 +50,14 @@ func (c *GatewayManager) Get(ctx context.Context, name string) (*v1.Gateway, err
 	return c.GatewayClient.GetGateway(ctx, o)
 }
 
-// Filter todo
-func (c *GatewayManager) Filter() v1.CaCertificateSlice {
-
-	return []*v1.CaCertificate{}
+func (c *GatewayManager) Filter(ctx context.Context, fo FilterOptions) ([]v1.Gateway, error) {
+	_ = fo
+	gatewayLs, err := c.GatewayClient.ListGateway(ctx)
+	if err != nil {
+		logger.Error(err)
+		return nil, err
+	}
+	return gatewayLs.Items, nil
 }
 
 func (c *GatewayManager) Delete(ctx context.Context, name string) error {

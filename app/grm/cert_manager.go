@@ -50,10 +50,14 @@ func (c *CertManager) Get(ctx context.Context, name string) (*v1.Certificate, er
 	return c.CertClient.GetCertificate(ctx, o)
 }
 
-// Filter todo
-func (c *CertManager) Filter() v1.CertificateSlice {
-
-	return []*v1.Certificate{}
+func (c *CertManager) Filter(ctx context.Context, fo FilterOptions) ([]v1.Certificate, error) {
+	_ = fo
+	certificateLs, err := c.CertClient.ListCertificate(ctx)
+	if err != nil {
+		logger.Error(err)
+		return nil, err
+	}
+	return certificateLs.Items, nil
 }
 
 func (c *CertManager) Delete(ctx context.Context, name string) error {

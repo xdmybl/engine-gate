@@ -1,7 +1,9 @@
 package grm
 
 import (
+	"context"
 	"github.com/wonderivan/logger"
+	"github.com/xdmybl/engine-gate/type"
 )
 
 var defaultGRM *GRM
@@ -39,6 +41,43 @@ type GRM struct {
 	UpstreamManager UpstreamManager `json:"upstream_manager"`
 	FilterManager   FilterManager   `json:"filter_manager"`
 	GatewayManager  GatewayManager  `json:"gateway_manager"`
+}
+
+type FilterOptions struct {
+}
+
+func (g *GRM) GetSnapshot() (*_type.Snapshot, error) {
+	ctx := context.Background()
+	snapshot := &_type.Snapshot{}
+	fo := FilterOptions{}
+	var err error
+	snapshot.CaList, err = g.CaManager.Filter(ctx, fo)
+	if err != nil {
+		logger.Error(err)
+		return nil, err
+	}
+	snapshot.CertList, err = g.CertManager.Filter(ctx, fo)
+	if err != nil {
+		logger.Error(err)
+		return nil, err
+	}
+	snapshot.FilterList, err = g.FilterManager.Filter(ctx, fo)
+	if err != nil {
+		logger.Error(err)
+		return nil, err
+	}
+	snapshot.GatewayList, err = g.GatewayManager.Filter(ctx, fo)
+	if err != nil {
+		logger.Error(err)
+		return nil, err
+	}
+	snapshot.UpstreamList, err = g.UpstreamManager.Filter(ctx, fo)
+	if err != nil {
+		logger.Error(err)
+		return nil, err
+	}
+
+	return snapshot, nil
 }
 
 func (g *GRM) Init() error {
