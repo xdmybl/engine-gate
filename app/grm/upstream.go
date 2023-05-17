@@ -50,10 +50,14 @@ func (u *UpstreamManager) Get(ctx context.Context, name string) (*v1.Upstream, e
 	return u.UpstreamClient.GetUpstream(ctx, o)
 }
 
-// Filter todo
-func (u *UpstreamManager) Filter() v1.UpstreamSlice {
-
-	return []*v1.Upstream{}
+func (u *UpstreamManager) Filter(ctx context.Context, fo FilterOptions) ([]v1.Upstream, error) {
+	_ = fo
+	upstreamList, err := u.UpstreamClient.ListUpstream(ctx)
+	if err != nil {
+		logger.Error(err)
+		return nil, err
+	}
+	return upstreamList.Items, nil
 }
 
 func (u *UpstreamManager) Delete(ctx context.Context, name string) error {

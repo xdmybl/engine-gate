@@ -51,10 +51,15 @@ func (c *CaManager) Get(ctx context.Context, name string) (*v1.CaCertificate, er
 	return c.CaClient.GetCaCertificate(ctx, o)
 }
 
-// Filter todo
-func (c *CaManager) Filter() v1.CaCertificateSlice {
-
-	return []*v1.CaCertificate{}
+func (c *CaManager) Filter(ctx context.Context, fo FilterOptions) ([]v1.CaCertificate, error) {
+	// todo filter 暂时没处理
+	_ = fo
+	certificateLs, err := c.CaClient.ListCaCertificate(ctx)
+	if err != nil {
+		logger.Error(err)
+		return nil, err
+	}
+	return certificateLs.Items, nil
 }
 
 func (c *CaManager) Delete(ctx context.Context, name string) error {
