@@ -8,6 +8,8 @@ import (
 	"github.com/wonderivan/logger"
 	"github.com/xdmybl/engine-gate/util/config"
 	"net"
+	"os"
+	"syscall"
 	"time"
 
 	"google.golang.org/grpc"
@@ -33,58 +35,61 @@ const (
 	grpcKeepaliveTimeout     = 5 * time.Second
 	grpcKeepaliveMinTime     = 30 * time.Second
 	grpcMaxConcurrentStreams = 1000000
+	CallBackDebug            = true
 )
 
-type Server struct {
-	xdsServer server.Server
-}
+var GlobalXDSServer server.Server
 
-//func NewServer(ctx context.Context, cache cachev3.Cache, cb *test.Callbacks) *Server {
-//	srv := server.NewServer(ctx, cache, cb)
-//	return &Server{srv}
+//type Server struct {
+//	xdsServer server.Server
 //}
-
-func (s *Server) registerServer(grpcServer *grpc.Server) {
-	// register services
-	discoverygrpc.RegisterAggregatedDiscoveryServiceServer(grpcServer, s.xdsServer)
-	endpointservice.RegisterEndpointDiscoveryServiceServer(grpcServer, s.xdsServer)
-	clusterservice.RegisterClusterDiscoveryServiceServer(grpcServer, s.xdsServer)
-	routeservice.RegisterRouteDiscoveryServiceServer(grpcServer, s.xdsServer)
-	listenerservice.RegisterListenerDiscoveryServiceServer(grpcServer, s.xdsServer)
-	secretservice.RegisterSecretDiscoveryServiceServer(grpcServer, s.xdsServer)
-	runtimeservice.RegisterRuntimeDiscoveryServiceServer(grpcServer, s.xdsServer)
-}
-
-func (s *Server) Run(port uint) {
-	// gRPC golang library sets a very small upper bound for the number gRPC/h2
-	// streams over a single TCP connection. If a proxy multiplexes requests over
-	// a single connection to the management server, then it might lead to
-	// availability problems. Keepalive timeouts based on connection_keepalive parameter https://www.envoyproxy.io/docs/envoy/latest/configuration/overview/examples#dynamic
-	var grpcOptions []grpc.ServerOption
-	grpcOptions = append(grpcOptions,
-		grpc.MaxConcurrentStreams(grpcMaxConcurrentStreams),
-		grpc.KeepaliveParams(keepalive.ServerParameters{
-			Time:    grpcKeepaliveTime,
-			Timeout: grpcKeepaliveTimeout,
-		}),
-		grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{
-			MinTime:             grpcKeepaliveMinTime,
-			PermitWithoutStream: true,
-		}),
-	)
-	grpcServer := grpc.NewServer(grpcOptions...)
-
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
-	if err != nil {
-		logger.Error(err)
-	}
-
-	s.registerServer(grpcServer)
-
-	if err = grpcServer.Serve(lis); err != nil {
-		logger.Error(err)
-	}
-}
+//
+////func NewServer(ctx context.Context, cache cachev3.Cache, cb *test.Callbacks) *Server {
+////	srv := server.NewServer(ctx, cache, cb)
+////	return &Server{srv}
+////}
+//
+//func (s *Server) registerServer(grpcServer *grpc.Server) {
+//	// register services
+//	discoverygrpc.RegisterAggregatedDiscoveryServiceServer(grpcServer, s.xdsServer)
+//	endpointservice.RegisterEndpointDiscoveryServiceServer(grpcServer, s.xdsServer)
+//	clusterservice.RegisterClusterDiscoveryServiceServer(grpcServer, s.xdsServer)
+//	routeservice.RegisterRouteDiscoveryServiceServer(grpcServer, s.xdsServer)
+//	listenerservice.RegisterListenerDiscoveryServiceServer(grpcServer, s.xdsServer)
+//	secretservice.RegisterSecretDiscoveryServiceServer(grpcServer, s.xdsServer)
+//	runtimeservice.RegisterRuntimeDiscoveryServiceServer(grpcServer, s.xdsServer)
+//}
+//
+//func (s *Server) Run(port uint) {
+//	// gRPC golang library sets a very small upper bound for the number gRPC/h2
+//	// streams over a single TCP connection. If a proxy multiplexes requests over
+//	// a single connection to the management server, then it might lead to
+//	// availability problems. Keepalive timeouts based on connection_keepalive parameter https://www.envoyproxy.io/docs/envoy/latest/configuration/overview/examples#dynamic
+//	var grpcOptions []grpc.ServerOption
+//	grpcOptions = append(grpcOptions,
+//		grpc.MaxConcurrentStreams(grpcMaxConcurrentStreams),
+//		grpc.KeepaliveParams(keepalive.ServerParameters{
+//			Time:    grpcKeepaliveTime,
+//			Timeout: grpcKeepaliveTimeout,
+//		}),
+//		grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{
+//			MinTime:             grpcKeepaliveMinTime,
+//			PermitWithoutStream: true,
+//		}),
+//	)
+//	grpcServer := grpc.NewServer(grpcOptions...)
+//
+//	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+//	if err != nil {
+//		logger.Error(err)
+//	}
+//
+//	s.registerServer(grpcServer)
+//
+//	if err = grpcServer.Serve(lis); err != nil {
+//		logger.Error(err)
+//	}
+//}
 
 func registerServer(grpcServer *grpc.Server, server server.Server) {
 	// register services
@@ -98,7 +103,7 @@ func registerServer(grpcServer *grpc.Server, server server.Server) {
 }
 
 // RunServer starts an xDS server at the given port.
-func RunServer(srv server.Server, address string) {
+func RunServer(shutdownChan chan os.Signal, srv server.Server, address string) {
 	var grpcOptions []grpc.ServerOption
 	grpcOptions = append(grpcOptions,
 		grpc.MaxConcurrentStreams(grpcMaxConcurrentStreams),
@@ -120,15 +125,65 @@ func RunServer(srv server.Server, address string) {
 
 	registerServer(grpcServer, srv)
 	logger.Info("xDS Server listen on %s", address)
-	if err = grpcServer.Serve(lis); err != nil {
-		logger.Error(err)
-	}
+	go func() {
+		if err = grpcServer.Serve(lis); err != nil {
+			logger.Error(err)
+		}
+	}()
+	go func() {
+		<-shutdownChan
+		grpcServer.GracefulStop()
+		shutdownChan <- syscall.Signal(0x10)
+		logger.Info("grpc server graceful stop")
+	}()
 }
 
 // GenerateSnapshot TODO
 // 这里创建了 默认的 资源
 // 后续应该改为空资源, 因为 envoy 连接后给的配置为空.
 func GenerateSnapshot() *cachev3.Snapshot {
+	//u := &v1.Upstream{
+	//	TypeMeta: v12.TypeMeta{},
+	//	ObjectMeta: v12.ObjectMeta{
+	//		Name:      ClusterName,
+	//		Namespace: "engine-gate-system",
+	//	},
+	//	Spec: v1.UpstreamSpec{
+	//		CommonInfo:        nil,
+	//		LbAlg:             0,
+	//		SslConfigurations: nil,
+	//		ConnPoll: &v1.ConnPoll{
+	//			MaxRequestsPerConnection: 0,
+	//			MaxConnections:           0,
+	//			MaxRequests:              0,
+	//			MaxPendingRequests:       0,
+	//			OutboundSourceAddress:    "",
+	//		},
+	//		HcInterval:           5,
+	//		HcTimeout:            5,
+	//		HcHealthyThreshold:   5,
+	//		HcUnhealthyThreshold: 5,
+	//		HcSpecifier: &v1.HealthCheckSpecifier{
+	//			Type:           v1.HealthCheckSpecifier_HTTP,
+	//			TcpHealthCheck: nil,
+	//			HttpHealthCheck: &v1.HttpHealthCheck{
+	//				Host:             UpstreamHost,
+	//				Path:             "/",
+	//				Method:           "GET",
+	//				ExpectedStatuses: []uint32{200},
+	//				ClientType:       "HTTP1",
+	//			},
+	//		},
+	//		StatefulSession: nil,
+	//		Endpoints:       nil,
+	//	},
+	//}
+	//clusterLs := translator.TranslateUpstreamLsToCluster(_type.Snapshot{}, v1.UpstreamSlice{u})
+	//clusterArr := make([]types.Resource, len(clusterLs))
+	//for i, cluster := range clusterLs {
+	//	clusterArr[i] = cluster
+	//}
+
 	defaultVersion := "1"
 	snap, _ := cachev3.NewSnapshot(defaultVersion,
 		map[resource.Type][]types.Resource{
@@ -155,6 +210,7 @@ func Init() error {
 		logger.Error("snapshot inconsistency: %+v\n%+v", snapshot, err)
 		return err
 	}
+
 	logger.Debug("will serve snapshot %+v", snapshot)
 
 	// 为某一个静态ID为 $nodeID 的 envoy 提供服务
@@ -167,8 +223,14 @@ func Init() error {
 	// Run the xDS server
 	ctx := context.Background()
 	// callbacks 是提供用户自定义的回调功能的接口, test.Callbacks 实现了
-	cb := &test.Callbacks{Debug: true}
-	srv := server.NewServer(ctx, cache, cb)
-	RunServer(srv, fmt.Sprintf("%s:%s", cfg.XDS.ListenIp, cfg.XDS.Port))
+	cb := &test.Callbacks{
+		Debug: CallBackDebug,
+	}
+	GlobalXDSServer = server.NewServer(ctx, cache, cb)
 	return nil
+}
+
+func RunXDSServer(shutdownChan chan os.Signal) {
+	cfg := config.GetConfig()
+	RunServer(shutdownChan, GlobalXDSServer, fmt.Sprintf("%s:%s", cfg.XDS.ListenIp, cfg.XDS.Port))
 }
